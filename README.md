@@ -16,11 +16,11 @@
 
 ### 它的运行界面：
 
-![Algorithm flow](./image/timer1.png)
+![Algorithm flow](./cycling-timer/image/timer1.png)
 
 ### 它附带两组每日定时提醒：
 
-![Algorithm flow](./image/timer2.png)
+![Algorithm flow](./cycling-timer/image/timer2.png)
 
 ## 2. 它的工作原理（技术实现）
 
