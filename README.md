@@ -16,7 +16,7 @@
 
 ### 它的运行界面：
 
-![Algorithm flow](./cycling-timer/image/timer1.png)
+![Algorithm flow](./image/timer1.png)
 
 ### 它附带两组每日定时提醒：
 
