@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CY-Timer-Alarm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            touch-action: manipulation;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 24px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        .timer-display {
+            font-size: 4rem;
+            font-weight: 700;
+            font-family: 'Courier New', 'Fira Mono', monospace;
+            color: #ffffff;
+            text-align: center;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(255,255,255,0.2);
+            line-height: 1.2;
+        }
+
+        .controls {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 18px 12px;
+            font-size: 2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 60px;
+            background: #1f1f1f;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-align: center;
+            font-family: inherit;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            background: #2d2d2d;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                gap: 40px;
+                padding: 20px 16px 32px;
+            }
+            .btn {
+                padding: 14px 8px;
+                font-size: 1.5rem;
+                min-width: 100px;
+            }
+            .controls {
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="timer-display" id="timerDisplay">5</div>
+    <div class="controls">
+        <button class="btn" id="btnMinus">-0s</button>
+        <button class="btn" id="btnPlus">+0s</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==================== 可配置常量 ====================
+        const COUNTDOWN_START = 120;        // 初始倒计时秒数
+        const ALERT_DURATION = 1;          // 提醒声音时长（秒）
+        const ADD_STEP = 60;               // 加步长（秒）
+        const DEDUCE_STEP = 30;            // 减步长（秒）
+        
+        // 提醒音设置（倒计时结束时）
+        const ALERT_SOUND_TYPE = 'sine';   // 可选: sine, square, sawtooth, triangle
+        const ALERT_FREQUENCY = 880;       // 频率（Hz）
+        
+        // 整倍提示音设置（倒计时过程中）
+        const TICK_SOUND_INTERVAL = 10;    // 每隔多少秒触发（10 的整数倍）
+        const TICK_VOLUME = 0.3;           // 音量（最大音量的 30%）
+        const TICK_DURATION = 0.15;        // 提示音时长（秒）
+        const TICK_SOUND_TYPE = 'sine';    // 提示音波形
+        const TICK_FREQUENCY = 600;        // 提示音频率（Hz）
+        
+        // ==================== DOM 元素 ====================
+        const timerDisplay = document.getElementById('timerDisplay');
+        const btnPlus = document.getElementById('btnPlus');
+        const btnMinus = document.getElementById('btnMinus');
+        
+        // ==================== 状态变量 ====================
+        let currentSeconds = COUNTDOWN_START;
+        let timerInterval = null;
+        
+        // ==================== 音频相关 ====================
+        let audioCtx = null;
+        let oscillator = null;
+        let gainNode = null;
+        let alertTimeout = null;
+        let tickTimeout = null;
+        
+        // ==================== 音频初始化 ====================
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = 1.0;
+                gainNode.connect(audioCtx.destination);
+                
+                const tryResume = () => {
+                    if (audioCtx && audioCtx.state !== 'running') {
+                        audioCtx.resume().catch(() => {});
+                    }
+                };
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', tryResume);
+                } else {
+                    tryResume();
+                }
+                
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && audioCtx && audioCtx.state !== 'running') {
+                        audioCtx.resume().catch(() => {});
+                    }
+                });
+                
+                const resumeOnTouch = () => {
+                    if (audioCtx && audioCtx.state !== 'running') {
+                        audioCtx.resume().catch(() => {});
+                    }
+                };
+                btnPlus.addEventListener('touchstart', resumeOnTouch, { passive: true });
+                btnMinus.addEventListener('touchstart', resumeOnTouch, { passive: true });
+                
+            } catch (e) {
+                // 音频不支持，倒计时仍可运行
+            }
+        }
+        
+        // ==================== 停止提醒声音（结束时的提醒） ====================
+        function stopAlertSound() {
+            if (alertTimeout) {
+                clearTimeout(alertTimeout);
+                alertTimeout = null;
+            }
+            if (oscillator) {
+                try {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                } catch (e) {}
+                oscillator = null;
+            }
+        }
+        
+        // ==================== 播放提醒声音（倒计时结束时） ====================
+        function playAlert() {
+            if (!audioCtx) {
+                initAudio();
+            }
+            
+            if (!audioCtx) return;
+            
+            const startSound = () => {
+                if (!audioCtx || audioCtx.state !== 'running') return;
+                
+                try {
+                    if (gainNode) {
+                        try { gainNode.disconnect(); } catch(e) {}
+                    }
+                    gainNode = audioCtx.createGain();
+                    gainNode.gain.value = 1.0;
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator = audioCtx.createOscillator();
+                    oscillator.type = ALERT_SOUND_TYPE;
+                    oscillator.frequency.value = ALERT_FREQUENCY;
+                    oscillator.connect(gainNode);
+                    oscillator.start();
+                    
+                    alertTimeout = setTimeout(() => {
+                        stopAlertSound();
+                    }, ALERT_DURATION * 1000);
+                    
+                } catch (e) {}
+            };
+            
+            if (audioCtx.state !== 'running') {
+                audioCtx.resume()
+                    .then(() => startSound())
+                    .catch(() => {});
+            } else {
+                startSound();
+            }
+        }
+        
+        // ==================== 停止整倍提示音 ====================
+        function stopTickSound() {
+            if (tickTimeout) {
+                clearTimeout(tickTimeout);
+                tickTimeout = null;
+            }
+            if (oscillator) {
+                try {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                } catch (e) {}
+                oscillator = null;
+            }
+        }
+        
+        // ==================== 播放整倍提示音（倒计时过程中） ====================
+        function playTickSound() {
+            if (!audioCtx) {
+                initAudio();
+            }
+            
+            if (!audioCtx) return;
+            
+            const startSound = () => {
+                if (!audioCtx || audioCtx.state !== 'running') return;
+                
+                try {
+                    // 临时创建独立的 gainNode，设置较低音量
+                    const tickGain = audioCtx.createGain();
+                    tickGain.gain.value = TICK_VOLUME;
+                    tickGain.connect(audioCtx.destination);
+                    
+                    const tickOsc = audioCtx.createOscillator();
+                    tickOsc.type = TICK_SOUND_TYPE;
+                    tickOsc.frequency.value = TICK_FREQUENCY;
+                    tickOsc.connect(tickGain);
+                    tickOsc.start();
+                    
+                    // TICK_DURATION 秒后自动停止
+                    tickTimeout = setTimeout(() => {
+                        try {
+                            tickOsc.stop();
+                            tickOsc.disconnect();
+                            tickGain.disconnect();
+                        } catch (e) {}
+                        tickTimeout = null;
+                    }, TICK_DURATION * 1000);
+                    
+                } catch (e) {}
+            };
+            
+            if (audioCtx.state !== 'running') {
+                audioCtx.resume()
+                    .then(() => startSound())
+                    .catch(() => {});
+            } else {
+                startSound();
+            }
+        }
+        
+        // ==================== 更新显示 ====================
+        function updateDisplay() {
+            timerDisplay.innerText = currentSeconds;
+        }
+        
+        // ==================== 停止倒计时定时器 ====================
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        // ==================== 开始倒计时 ====================
+        function startCountdown() {
+            if (currentSeconds <= 0) return;
+            
+            stopTimer();
+            
+            timerInterval = setInterval(() => {
+                if (currentSeconds > 0) {
+                    const oldValue = currentSeconds;
+                    currentSeconds--;
+                    updateDisplay();
+                    
+                    // 检查整倍提示音（递减后，且不为 0）
+                    if (currentSeconds > 0 && currentSeconds % TICK_SOUND_INTERVAL === 0) {
+                        playTickSound();
+                    }
+                    
+                    // 唯一触发提醒的条件：从 1 变为 0
+                    if (oldValue === 1 && currentSeconds === 0) {
+                        playAlert();
+                    }
+                } else {
+                    stopTimer();
+                }
+            }, 1000);
+        }
+        
+        // ==================== 加减秒数 ====================
+        function modifySeconds(delta) {
+            let newValue = currentSeconds + delta;
+            if (newValue < 0) newValue = 0;
+            currentSeconds = newValue;
+            updateDisplay();
+            startCountdown();
+        }
+        
+        // ==================== 按钮事件绑定 ====================
+        function bindEvents() {
+            btnPlus.addEventListener('click', (e) => {
+                e.preventDefault();
+                modifySeconds(ADD_STEP);
+            });
+            btnMinus.addEventListener('click', (e) => {
+                e.preventDefault();
+                modifySeconds(-DEDUCE_STEP);
+            });
+            btnPlus.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                modifySeconds(ADD_STEP);
+            }, { passive: false });
+            btnMinus.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                modifySeconds(-DEDUCE_STEP);
+            }, { passive: false });
+        }
+        
+        // ==================== 页面初始化 ====================
+        function init() {
+            initAudio();
+            currentSeconds = COUNTDOWN_START;
+            updateDisplay();
+            
+            // 自适应按钮文字
+            btnPlus.innerText = `+${ADD_STEP}s`;
+            btnMinus.innerText = `-${DEDUCE_STEP}s`;
+            
+            bindEvents();
+            startCountdown();
+        }
+        
+        init();
+    })();
+
+</script>
+</body>
+</html>

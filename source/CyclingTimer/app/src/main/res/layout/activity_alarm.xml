@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000"
+    android:padding="24dp">
+
+    <!-- 顶部空间 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.3" />
+
+    <!-- 每日提醒 1 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1F1F1F"
+        android:padding="20dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="每日提醒 1"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/alarm1Switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="提醒时间"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:layout_marginEnd="20dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#DCDCDC"
+                android:padding="10dp"
+                android:gravity="center_vertical">
+
+                <NumberPicker
+                    android:id="@+id/alarm1Hour"
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="24sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp" />
+
+                <NumberPicker
+                    android:id="@+id/alarm1Minute"
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 每日提醒 2 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1F1F1F"
+        android:padding="20dp"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="每日提醒 2"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/alarm2Switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="提醒时间"
+                android:textSize="14sp"
+                android:textColor="#888888"
+                android:layout_marginEnd="20dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#DCDCDC"
+                android:padding="10dp"
+                android:gravity="center_vertical">
+
+                <NumberPicker
+                    android:id="@+id/alarm2Hour"
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textSize="24sp"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp" />
+
+                <NumberPicker
+                    android:id="@+id/alarm2Minute"
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 返回按钮 -->
+    <TextView
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="◀ 返回"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:padding="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground"
+        android:layout_marginTop="20dp" />
+
+    <!-- 弹性空间 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.7" />
+
+</LinearLayout>
